@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAMXAIO</title>
+    <style>
+        /* Mobile-first responsive styles */
+        :root {
+            --main-bg: linear-gradient(120deg, #232526 0%, #414345 100%);
+            --header-bg: linear-gradient(90deg, #00c3ff 0%, #ffff1c 100%);
+            --header-text: #232526;
+            --gallery-card: rgba(255,255,255,0.22);
+            --gallery-shadow: 0 8px 32px 0 rgba(0,195,255,0.13), 0 2px 8px 0 #ffff1c33;
+            --download-btn-bg: linear-gradient(135deg, #00c3ff 0%, #ffff1c 100%);
+            --highlight-outline: #00c3ff;
+            --highlight-border: #ffff1c;
+        }
+        body[data-theme="light"] {
+            --main-bg: linear-gradient(120deg, #f8fafc 0%, #e2e8f0 100%);
+            --header-bg: linear-gradient(90deg, #fffbe6 0%, #00c3ff 100%);
+            --header-text: #232526;
+            --gallery-card: rgba(0,0,0,0.04);
+            --gallery-shadow: 0 8px 32px 0 #00c3ff11, 0 2px 8px 0 #ffff1c11;
+            --download-btn-bg: linear-gradient(135deg, #00c3ff 0%, #fffbe6 100%);
+            --highlight-outline: #00c3ff;
+            --highlight-border: #00c3ff;
+        }
+        body[data-theme="neon"] {
+            --main-bg: linear-gradient(120deg, #0f2027 0%, #2c5364 100%);
+            --header-bg: linear-gradient(90deg, #ff00cc 0%, #333399 100%);
+            --header-text: #fff;
+            --gallery-card: rgba(255,0,255,0.10);
+            --gallery-shadow: 0 8px 32px 0 #ff00cc33, 0 2px 8px 0 #33339933;
+            --download-btn-bg: linear-gradient(135deg, #ff00cc 0%, #333399 100%);
+            --highlight-outline: #ff00cc;
+            --highlight-border: #333399;
+        }
+        body {
+            font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: var(--main-bg, #232526);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: 16px;
+            transition: background 0.8s cubic-bezier(.4,2,.3,1);
+        }
+        header {
+            padding: 1.2rem 0 1rem 0;
+            text-align: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border-bottom: 1px solid #eee;
+            background: var(--header-bg, #fff);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            margin-bottom: 0 !important;
+            margin: 0 !important;
+            padding-bottom: 0.5rem;
+        }
+        header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 0.2em;
+            background: linear-gradient(90deg, #232526 0%, #00c3ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        header p {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #232526cc;
+        }
+        #searchBar {
+            margin: 0 !important;
+        }
+        header {
+            margin-bottom: 0 !important;
+        }
+        .gallery {
+            column-count: 1;
+            column-gap: 12px;
+            padding: 1rem 0.5rem;
+            max-width: 100vw;
+            margin: 0 auto;
+            margin-top: 0 !important;
+        }
+        .gallery-item {
+            background: var(--gallery-card, rgba(255,255,255,0.22));
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 12px;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.18s, box-shadow 0.18s;
+            border: 1.5px solid transparent;
+            width: 100%;
+            display: block;
+        }
+        .gallery-item img, .gallery-item video {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 12px;
+            display: block;
+            object-fit: cover;
+            aspect-ratio: 16/9;
+            background: #eee;
+            min-height: 120px;
+            /* Native lazy loading */
+            loading: lazy;
+        }
+        .gallery-item:active, .gallery-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 24px 0 #00c3ff33;
+            border: 1.5px solid #00c3ff;
+        }
+        /* Sticky bottom bar for mobile controls */
+        .mobile-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+            z-index: 2000;
+            padding: 0.5rem 0;
+        }
+        .mobile-bar button {
+            background: linear-gradient(90deg, #00c3ff 0%, #ffff1c 100%);
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 1.5rem;
+            color: #232526;
+            margin: 0 0.2rem;
+            box-shadow: 0 2px 8px #00c3ff33;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .mobile-bar button:active {
+            background: linear-gradient(90deg, #ffff1c 0%, #00c3ff 100%);
+            transform: scale(1.1);
+        }
+        /* Responsive columns for larger screens */
+        @media (min-width: 600px) {
+            .gallery { column-count: 2; }
+        }
+        @media (min-width: 900px) {
+            .gallery { column-count: 3; }
+        }
+        @media (min-width: 1200px) {
+            .gallery { column-count: 4; }
+        }
+        /* Larger touch targets and fonts for mobile */
+        button, input, select {
+            font-size: 1.1rem;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        /* Lightbox and overlays mobile-friendly */
+        #lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.92);
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        #lightbox.active {
+            display: flex;
+        }
+        #lightbox img, #lightbox video {
+            max-width: 96vw;
+            max-height: 70vh;
+            border-radius: 16px;
+            background: #232526;
+        }
+        #lightbox .close-btn {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            font-size: 2.2rem;
+            color: #fff;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 2100;
+        }
+        /* Hide scrollbars on mobile for a cleaner look */
+        ::-webkit-scrollbar { width: 0; background: transparent; }
+        /* ...existing code... */
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        header {
+            margin: 0 !important;
+            padding-bottom: 0.5rem;
+        }
+        #gallery, .gallery {
+            margin-top: 0 !important;
+        }
+        /* If you have a particle canvas */
+        #particle-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1em;max-width:1200px;margin:0 auto 0 auto;padding:0 1em;">
+            <div style="flex:1 1 200px;text-align:left;">
+                <h1 style="margin:0;">AIML 2023</h1>
+                <p style="margin:0;">Glimses of 2 years of BTech</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:1em;flex-wrap:wrap;">
+                <button id="themeToggle" title="Switch Theme" style="margin:0;">🌙 Theme</button>
+                <div id="gridSizeControl" style="margin:0;">
+                    <label for="gridSizeSlider">Grid:</label>
+                    <input type="range" id="gridSizeSlider" min="1" max="5" value="3">
+                    <span id="gridSizeValue">3</span>
+                </div>
+                <div id="timeMachineControl" style="margin:0;">
+                    <label for="timeMachineSlider">Date:</label>
+                    <input type="range" id="timeMachineSlider" min="0" max="0" value="0">
+                    <span id="timeMachineDate">All</span>
+                </div>
+                <input id="searchBar" type="text" placeholder="Search images by filename..." style="margin:0.2em 0 0 0;min-width:180px;">
+            </div>
+        </div>
+    </header>
+    <canvas id="particle-bg"></canvas>
+    <section class="gallery" id="gallery">
+        <div id="highlighted-image-container" style="display:none; margin-bottom:2.5rem;"></div>
+        <!-- Images from SOURCE folder will appear here -->
+    </section>
+    <div id="lightbox">
+        <button class="close-btn" title="Close">&times;</button>
+        <img src="" alt="Large Preview">
+    </div>
+    <!-- Removed: <div id="puzzleModal">...</div> -->
+    <button id="storyModeBtn" style="position:fixed;bottom:32px;right:32px;z-index:3000;">▶️ Play Story</button>
+    <div id="storyMode">
+        <div id="storyProgress"><div id="storyProgressBar"></div></div>
+        <div id="storyMediaContainer">
+            <img id="storyMedia" src="" style="display:none;" />
+            <video id="storyVideo" controls style="display:none;max-width:90vw;max-height:70vh;border-radius:24px;background:#232526;"></video>
+        </div>
+        <div id="storyCaption"></div>
+        <div id="storyControls">
+            <button id="storyPrev">⏮️ Prev</button>
+            <button id="storyPause">⏸️ Pause</button>
+            <button id="storyNext">⏭️ Next</button>
+            <button id="storyExit">❌ Exit</button>
+        </div>
+    </div>
+    
+    <style>
+      @media (max-width: 600px) {
+        #themeToggle, #analyticsBtn, #storyModeBtn {
+          display: none !important;
+        }
+        #mobileBar {
+          display: flex !important;
+        }
+        .gallery {
+          padding-bottom: 90px !important;
+        }
+        .gallery-item, .gallery-item .download-btn, .reaction-btn, .voice-caption-btn {
+          min-width: 56px;
+          min-height: 56px;
+          font-size: 1.2em;
+        }
+        header h1 { font-size: 2.1rem; }
+        header p, #searchBar, #gridSizeControl, #timeMachineControl, #gridSizeValue, #timeMachineDate {
+          font-size: 1.1rem !important;
+        }
+        #lightbox .close-btn, #storyMode button, #closeAnalytics, #closeVoiceModal {
+          font-size: 2.2rem !important;
+          padding: 0.4em 1.2em !important;
+        }
+        #lightbox img, #lightbox video, #storyMedia, #storyVideo {
+          max-width: 98vw !important;
+          max-height: 60vh !important;
+        }
+        #analyticsModal > div, #voiceModal > div {
+          max-width: 98vw !important;
+          padding: 1.2em 0.5em !important;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    <script>
+        // List your SOURCE images here
+        const sourceImages = [
+           'ANUM3965.JPG',
+'ASGK4724.JPG',
+'BBSW8545.JPG',
+'BOHC6225.JPG',
+'HDLLE2486.JPG',
+'HHTP7846.JPG',
+'IMG_0003.JPG',
+'IMG_0004.JPG',
+'IMG_0008.JPG',
+'IMG_0009.JPG',
+'IMG_0033.JPG',
+'IMG_0034.JPG',
+'IMG_0035.JPG',
+'IMG_0048.JPG',
+'IMG_0049.JPG',
+'IMG_0085.JPG',
+'IMG_0132.JPG',
+'IMG_0133.JPG',
+'IMG_0134.JPG',
+'IMG_0135.JPG',
+'IMG_0439.JPG',
+'IMG_0447.JPG',
+'IMG_0491.JPG',
+'IMG_0492.JPG',
+'IMG_0493.JPG',
+'IMG_0494.JPG',
+'IMG_0495.JPG',
+'IMG_0500.JPG',
+'IMG_0505.JPG',
+'IMG_0506.JPG',
+'IMG_0514.JPG',
+'IMG_0532.JPG',
+'IMG_0533.JPG',
+'IMG_0537.JPG',
+'IMG_0577.JPG',
+'IMG_0578.JPG',
+'IMG_0579.JPG',
+'IMG_0650.JPG',
+'IMG_0652.JPG',
+'IMG_0653.JPG',
+'IMG_0654.JPG',
+'IMG_0655.JPG',
+'IMG_0656.JPG',
+'IMG_0657.JPG',
+'IMG_0658.JPG',
+'IMG_0659.JPG',
+'IMG_0660.JPG',
+'IMG_0661.JPG',
+'IMG_0662.JPG',
+'IMG_0663.JPG',
+'IMG_0666.JPG',
+'IMG_0667.JPG',
+'IMG_0668.JPG',
+'IMG_0669.JPG',
+'IMG_0670.JPG',
+'IMG_0672.JPG',
+'IMG_0673.JPG',
+'IMG_0674.JPG',
+'IMG_0764.JPG',
+'IMG_0838.JPG',
+'IMG_0876.JPG',
+'IMG_0877.JPG',
+'IMG_0878.JPG',
+'IMG_0879.JPG',
+'IMG_1106.JPG',
+'IMG_1107.JPG',
+'IMG_1108.JPG',
+'IMG_1111.JPG',
+'IMG_1112.JPG',
+'IMG_1113.JPG',
+'IMG_1114.JPG',
+'IMG_1115.JPG',
+'IMG_1116.JPG',
+'IMG_1117.JPG',
+'IMG_1118.JPG',
+'IMG_1119.JPG',
+'IMG_1120.JPG',
+'IMG_1121.JPG',
+'IMG_1122.JPG',
+'IMG_1123.JPG',
+'IMG_1124.JPG',
+'IMG_1125.JPG',
+'IMG_1132.JPG',
+'IMG_1133.JPG',
+'IMG_1136.JPG',
+'IMG_1138.JPG',
+'IMG_1139.JPG',
+'IMG_1147.JPG',
+'IMG_1148.JPG',
+'IMG_1149.JPG',
+'IMG_1156.JPG',
+'IMG_1161.JPG',
+'IMG_1162.JPG',
+'IMG_1163.JPG',
+'IMG_1164.JPG',
+'IMG_1165.JPG',
+'IMG_1167.JPG',
+'IMG_1168.JPG',
+'IMG_1172.JPG',
+'IMG_1173.JPG',
+'IMG_1174.JPG',
+'IMG_1175.JPG',
+'IMG_1176.JPG',
+'IMG_1177.JPG',
+'IMG_1178.JPG',
+'IMG_1179.JPG',
+'IMG_1180.JPG',
+'IMG_1182.JPG',
+'IMG_1187.JPG',
+'IMG_1192.JPG',
+'IMG_1194.JPG',
+'IMG_1195.JPG',
+'IMG_1196.JPG',
+'IMG_1198.JPG',
+'IMG_1200.JPG',
+'IMG_1203.JPG',
+'IMG_1204.JPG',
+'IMG_1205.JPG',
+'IMG_1206.JPG',
+'IMG_1207.JPG',
+'IMG_1208.JPG',
+'IMG_1210.JPG',
+'IMG_1211.JPG',
+'IMG_1289.JPG',
+'IMG_1511.JPG',
+'IMG_1512.JPG',
+'IMG_1513.JPG',
+'IMG_1514.JPG',
+'IMG_1515.JPG',
+'IMG_1516.JPG',
+'IMG_1828.JPG',
+'IMG_1829.JPG',
+'IMG_1830.JPG',
+'IMG_2038.JPG',
+'IMG_2039.JPG',
+'IMG_2040.JPG',
+'IMG_2041.JPG',
+'IMG_2042.JPG',
+'IMG_2044.JPG',
+'IMG_2045.JPG',
+'IMG_2047.JPG',
+'IMG_2048.JPG',
+'IMG_2049.JPG',
+'IMG_2050.JPG',
+'IMG_2051.JPG',
+'IMG_2054.JPG',
+'IMG_2056.JPG',
+'IMG_2057.JPG',
+'IMG_2058.JPG',
+'IMG_2064.JPG',
+'IMG_2065.JPG',
+'IMG_2066.JPG',
+'IMG_2067.JPG',
+'IMG_2068.JPG',
+'IMG_2069.JPG',
+'IMG_2070.JPG',
+'IMG_2080.JPG',
+'IMG_2098.JPG',
+'IMG_2099.JPG',
+'IMG_2103.JPG',
+'IMG_2104.JPG',
+'IMG_2105.JPG',
+'IMG_2106.JPG',
+'IMG_2107.JPG',
+'IMG_2108.JPG',
+'IMG_2109.JPG',
+'IMG_2110.JPG',
+'IMG_2111.JPG',
+'IMG_2112.JPG',
+'IMG_2113.JPG',
+'IMG_2115.JPG',
+'IMG_2116.JPG',
+'IMG_2117.JPG',
+'IMG_2118.JPG',
+'IMG_2120.JPG',
+'IMG_2121.JPG',
+'IMG_2122.JPG',
+'IMG_2123.JPG',
+'IMG_2124.JPG',
+'IMG_2125.JPG',
+'IMG_2126.JPG',
+'IMG_2131.JPG',
+'IMG_2132.JPG',
+'IMG_2376.JPG',
+'IMG_2379.JPG',
+'IMG_2380.JPG',
+'IMG_2381.JPG',
+'IMG_2382.JPG',
+'IMG_2385.JPG',
+'IMG_2397.JPG',
+'IMG_2398.JPG',
+'IMG_2407.JPG',
+'IMG_2417.JPG',
+'IMG_2418.JPG',
+'IMG_2419.JPG',
+'IMG_2420.JPG',
+'IMG_2421.JPG',
+'IMG_2422.JPG',
+'IMG_2423.JPG',
+'IMG_2425.JPG',
+'IMG_2426.JPG',
+'IMG_2427.JPG',
+'IMG_2429.JPG',
+'IMG_2431.JPG',
+'IMG_2434.JPG',
+'IMG_2436.JPG',
+'IMG_2613.JPG',
+'IMG_2614.JPG',
+'IMG_2615.JPG',
+'IMG_2616.JPG',
+'IMG_2617.JPG',
+'IMG_2618.JPG',
+'IMG_2620.JPG',
+'IMG_2621.JPG',
+'IMG_2622.JPG',
+'IMG_2623.JPG',
+'IMG_2624.JPG',
+'IMG_2625.JPG',
+'IMG_2627.JPG',
+'IMG_2628.JPG',
+'IMG_2641.JPG',
+'IMG_2642.JPG',
+'IMG_2643.JPG',
+'IMG_2644.JPG',
+'IMG_2657.JPG',
+'IMG_2661.JPG',
+'IMG_2662.JPG',
+'IMG_2666.JPG',
+'IMG_2678.JPG',
+'IMG_2688.JPG',
+'IMG_2689.JPG',
+'IMG_2690.JPG',
+'IMG_2691.JPG',
+'IMG_2693.JPG',
+'IMG_2694.JPG',
+'IMG_2968.JPG',
+'IMG_2969.JPG',
+'OIP.jpeg',
+'IMG_0513.PNG',
+'1719189127744.mp4' // Add your mp4 video here
+        ];
+        const gallery = document.getElementById('gallery');
+        const searchBar = document.getElementById('searchBar');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = lightbox.querySelector('img');
+        const closeBtn = lightbox.querySelector('.close-btn');
+        const highlightedImageContainer = document.getElementById('highlighted-image-container');
+        // Shuffle images
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+        // Render gallery
+        function renderGallery(images, highlightRandom = true) {
+            gallery.innerHTML = '';
+            highlightedImageContainer.innerHTML = '';
+            highlightedImageContainer.style.display = 'none';
+            let highlightIdx = highlightRandom ? Math.floor(Math.random() * images.length) : -1;
+            images.forEach((filename, idx) => {
+                const ext = filename.split('.').pop().toLowerCase();
+                let contentHtml = '';
+                if (["jpg","jpeg","png","webp","gif","bmp"].includes(ext)) {
+                    contentHtml = `<img src="SOURCE/${filename}" alt="${filename}">`;
+                } else if (["mp4","webm","ogg"].includes(ext)) {
+                    contentHtml = `<video src="SOURCE/${filename}" controls style="width:100%;border-radius:18px;background:#111;"></video>`;
+                }
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.innerHTML = `
+                    ${contentHtml}
+                    <button class="download-btn" title="Download">⬇️</button>
+                   
+                `;
+                // Lightbox for images
+                const imgEl = div.querySelector('img');
+                if (imgEl) {
+                    imgEl.onclick = () => {
+                        lightboxImg.src = `SOURCE/${filename}`;
+                        lightbox.classList.add('active');
+                    };
+                }
+                // Download
+                div.querySelector('.download-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    const link = document.createElement('a');
+                    link.href = `SOURCE/${filename}`;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+                if (idx === highlightIdx) {
+                    const bigDiv = div.cloneNode(true);
+                    bigDiv.style.maxWidth = '700px';
+                    bigDiv.style.margin = '0 auto 2.5rem auto';
+                    bigDiv.style.boxShadow = '0 0 32px 0 #ffd200cc, 0 8px 32px 0 rgba(31,38,135,0.18)';
+                    bigDiv.style.outline = '6px solid #ffd200';
+                    const bigImg = bigDiv.querySelector('img,video');
+                    if (bigImg) {
+                        bigImg.style.maxHeight = '400px';
+                        bigImg.style.objectFit = 'contain';
+                    }
+                    highlightedImageContainer.appendChild(bigDiv);
+                    highlightedImageContainer.style.display = 'block';
+                } else {
+                    gallery.appendChild(div);
+                }
+            });
+        }
+        // Lightbox close
+        closeBtn.onclick = () => {
+            lightbox.classList.remove('active');
+            lightboxImg.src = '';
+        };
+        lightbox.onclick = (e) => {
+            if (e.target === lightbox) closeBtn.onclick();
+        };
+        // Search/filter
+        searchBar.addEventListener('input', function() {
+            const val = this.value.trim().toLowerCase();
+            const filtered = sourceImages.filter(f => f.toLowerCase().includes(val));
+            renderGallery(filtered, false);
+        });
+        // Theme toggle logic
+        const themeToggle = document.getElementById('themeToggle');
+        const themes = ['dark', 'light', 'neon'];
+        let themeIdx = 0;
+        function setTheme(idx) {
+            document.body.setAttribute('data-theme', themes[idx]);
+            themeToggle.textContent = themes[idx] === 'dark' ? '🌙 Theme' : (themes[idx] === 'light' ? '☀️ Theme' : '🦄 Neon');
+        }
+        themeToggle.onclick = () => {
+            themeIdx = (themeIdx + 1) % themes.length;
+            setTheme(themeIdx);
+        };
+        setTheme(themeIdx);
+        // Grid size control logic
+        const gridSizeSlider = document.getElementById('gridSizeSlider');
+        const gridSizeValue = document.getElementById('gridSizeValue');
+        const gallerySection = document.querySelector('.gallery');
+        function setGridColumns(cols) {
+            gallerySection.style.columnCount = cols;
+            gridSizeValue.textContent = cols;
+        }
+        gridSizeSlider.addEventListener('input', function() {
+            setGridColumns(this.value);
+        });
+        setGridColumns(gridSizeSlider.value);
+        // Time Machine: filter gallery by image date
+        async function getImageDates(images) {
+            const dateMap = {};
+            for (const filename of images) {
+                let date = null;
+                // Try to extract from EXIF
+                if (filename.match(/\.(jpe?g|png)$/i)) {
+                    await new Promise((resolve) => {
+                        const img = new window.Image();
+                        img.crossOrigin = 'Anonymous';
+                        img.src = `SOURCE/${filename}`;
+                        img.onload = () => {
+                            EXIF.getData(img, function() {
+                                date = EXIF.getTag(this, 'DateTimeOriginal') || EXIF.getTag(this, 'DateTime');
+                                resolve();
+                            });
+                        };
+                        img.onerror = resolve;
+                    });
+                }
+                // Fallback: try to extract from filename (e.g., IMG_20230615.jpg)
+                if (!date) {
+                    const match = filename.match(/(20\d{2})(\d{2})(\d{2})/);
+                    if (match) date = `${match[1]}-${match[2]}-${match[3]}`;
+                }
+                if (date) dateMap[filename] = date.split(' ')[0].replace(/:/g,'-');
+            }
+            return dateMap;
+        }
+        // Setup time machine slider
+        async function setupTimeMachine(images) {
+            const dateMap = await getImageDates(images);
+            const dates = Array.from(new Set(Object.values(dateMap))).sort();
+            const slider = document.getElementById('timeMachineSlider');
+            const dateLabel = document.getElementById('timeMachineDate');
+            slider.max = dates.length;
+            slider.value = 0;
+            function filterByDate(idx) {
+                if (idx == 0) {
+                    renderGallery(images);
+                    dateLabel.textContent = 'All';
+                } else {
+                    const date = dates[idx-1];
+                    const filtered = images.filter(f => dateMap[f] === date);
+                    renderGallery(filtered, false);
+                    dateLabel.textContent = date;
+                }
+            }
+            slider.oninput = () => filterByDate(Number(slider.value));
+            filterByDate(0);
+        }
+        setupTimeMachine(sourceImages);
+        // Particle background animation
+        const canvas = document.getElementById('particle-bg');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        function createParticles() {
+            particles = [];
+            for (let i = 0; i < 60; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 2.5 + 1.5,
+                    dx: (Math.random() - 0.5) * 0.7,
+                    dy: (Math.random() - 0.5) * 0.7,
+                    color: `hsla(${Math.random()*360}, 80%, 60%, 0.7)`
+                });
+            }
+        }
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (const p of particles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, 2 * Math.PI);
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 12;
+                ctx.fill();
+            }
+        }
+        function updateParticles() {
+            for (const p of particles) {
+                p.x += p.dx;
+                p.y += p.dy;
+                if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+            }
+        }
+        function animateParticles() {
+            drawParticles();
+            updateParticles();
+            requestAnimationFrame(animateParticles);
+        }
+        resizeCanvas();
+        createParticles();
+        animateParticles();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            createParticles();
+        });
+        // Mood lighting: change background to dominant color of highlighted image
+        function getDominantColor(imgElement, callback) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            imgElement.crossOrigin = 'Anonymous';
+            imgElement.onload = function() {
+                canvas.width = imgElement.naturalWidth;
+                canvas.height = imgElement.naturalHeight;
+                ctx.drawImage(imgElement, 0, 0);
+                const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                let r=0, g=0, b=0, count=0;
+                for (let i = 0; i < data.length; i += 4*100) { // sample every 100th pixel
+                    r += data[i];
+                    g += data[i+1];
+                    b += data[i+2];
+                    count++;
+                }
+                r = Math.round(r/count);
+                g = Math.round(g/count);
+                b = Math.round(b/count);
+                callback(`rgb(${r},${g},${b})`);
+            };
+            if (imgElement.complete) imgElement.onload();
+        }
+        function setMoodLightingForHighlight() {
+            const highlight = document.querySelector('#highlighted-image-container .gallery-item img');
+            if (highlight) {
+                getDominantColor(highlight, (color) => {
+                    document.body.style.background = `radial-gradient(circle at 60% 40%, ${color} 0%, var(--main-bg) 100%)`;
+                });
+            } else {
+                document.body.style.background = 'var(--main-bg)';
+            }
+        }
+        // Call after rendering gallery
+        const origRenderGallery = renderGallery;
+        renderGallery = function(images, highlightRandom = true) {
+            origRenderGallery(images, highlightRandom);
+            setTimeout(setMoodLightingForHighlight, 200);
+        };
+        // Remove puzzle button and modal logic
+       
+        // Initial render with shuffle and highlight
+        let shuffled = [...sourceImages];
+        shuffleArray(shuffled);
+        renderGallery(shuffled);
+        // Story mode logic
+        const storyBtn = document.getElementById('storyModeBtn');
+        const storyMode = document.getElementById('storyMode');
+        const storyMedia = document.getElementById('storyMedia');
+        const storyVideo = document.getElementById('storyVideo');
+        const storyCaption = document.getElementById('storyCaption');
+        const storyPrev = document.getElementById('storyPrev');
+        const storyNext = document.getElementById('storyNext');
+        const storyPause = document.getElementById('storyPause');
+        const storyExit = document.getElementById('storyExit');
+        const storyProgressBar = document.getElementById('storyProgressBar');
+        let storyIdx = 0, storyPaused = false, storyTimer = null, storyDuration = 3500;
+        let storyList = sourceImages;
+        function showStory(idx) {
+            if (idx < 0) idx = storyList.length-1;
+            if (idx >= storyList.length) idx = 0;
+            storyIdx = idx;
+            const filename = storyList[storyIdx];
+            const ext = filename.split('.').pop().toLowerCase();
+            storyMedia.style.display = 'none';
+            storyVideo.style.display = 'none';
+            if (["jpg","jpeg","png","webp","gif","bmp"].includes(ext)) {
+                storyMedia.src = `SOURCE/${filename}`;
+                storyMedia.style.display = '';
+                storyVideo.pause();
+            } else if (["mp4","webm","ogg","mov"].includes(ext)) {
+                storyVideo.src = `SOURCE/${filename}`;
+                storyVideo.style.display = '';
+                storyMedia.style.display = 'none';
+                storyVideo.currentTime = 0;
+                storyVideo.play();
+            }
+            storyCaption.textContent = filename;
+            storyProgressBar.style.width = '0%';
+        }
+        function playStory() {
+            storyMode.classList.add('active');
+            storyPaused = false;
+            showStory(storyIdx);
+            nextStoryStep();
+        }
+        function nextStoryStep() {
+            clearTimeout(storyTimer);
+            if (storyPaused) return;
+            let progress = 0;
+            storyProgressBar.style.width = '0%';
+            function animateProgress() {
+                if (storyPaused) return;
+                progress += 1000/60;
+                let percent = Math.min(progress / storyDuration * 100, 100);
+                storyProgressBar.style.width = percent + '%';
+                if (percent < 100) {
+                    storyTimer = setTimeout(animateProgress, 1000/60);
+                } else {
+                    storyIdx = (storyIdx + 1) % storyList.length;
+                    showStory(storyIdx);
+                    nextStoryStep();
+                }
+            }
+            animateProgress();
+        }
+        storyBtn.onclick = playStory;
+        storyNext.onclick = () => { showStory(++storyIdx); nextStoryStep(); };
+        storyPrev.onclick = () => { showStory(--storyIdx); nextStoryStep(); };
+        storyPause.onclick = () => { storyPaused = !storyPaused; storyPause.textContent = storyPaused ? '▶️ Resume' : '⏸️ Pause'; if (!storyPaused) nextStoryStep(); };
+        storyExit.onclick = () => { storyMode.classList.remove('active'); clearTimeout(storyTimer); storyPaused = false; storyPause.textContent = '⏸️ Pause'; };
+        // Pause story on video play
+        storyVideo.onplay = () => { storyPaused = true; storyPause.textContent = '▶️ Resume'; };
+        // Animated emoji reactions (localStorage)
+        // Patch renderGallery to add reactions
+        const origRenderGallery2 = renderGallery;
+        renderGallery = function(images, highlightRandom = true) {
+            origRenderGallery2(images, highlightRandom);
+            // Add reactions to all gallery items
+            document.querySelectorAll('.gallery-item').forEach((item, idx) => {
+                const filename = images[idx >= 0 ? idx : 0];
+                if (!item.querySelector('.reaction-bar') && filename) {
+                    item.appendChild(createReactionBar(filename));
+                }
+            });
+        };
+        // Initial render with shuffle and highlight
+        let shuffled2 = [...sourceImages];
+        shuffleArray(shuffled2);
+        renderGallery(shuffled2);
+        // Extract GPS from EXIF for all images in gallery
+        function dmsToDecimal(dms, ref) {
+            if (!dms) return null;
+            const [d, m, s] = dms;
+            let dec = d + m/60 + s/3600;
+            if (ref === 'S' || ref === 'W') dec = -dec;
+            return dec;
+        }
+        async function extractAllImageGPS(images) {
+            const gpsMap = {};
+            for (const filename of images) {
+                if (!filename.match(/\.(jpe?g|png)$/i)) continue;
+                await new Promise((resolve) => {
+                    const img = new window.Image();
+                    img.crossOrigin = 'Anonymous';
+                    img.src = `SOURCE/${filename}`;
+                    img.onload = () => {
+                        EXIF.getData(img, function() {
+                            const lat = dmsToDecimal(EXIF.getTag(this, 'GPSLatitude'), EXIF.getTag(this, 'GPSLatitudeRef'));
+                            const lng = dmsToDecimal(EXIF.getTag(this, 'GPSLongitude'), EXIF.getTag(this, 'GPSLongitudeRef'));
+                            if (lat && lng) gpsMap[filename] = [lat, lng];
+                            resolve();
+                        });
+                    };
+                    img.onerror = resolve;
+                });
+            }
+            return gpsMap;
+        }
+        // Map modal logic (replace demo data with real EXIF GPS)
+        const showMapBtn = document.getElementById('showMapBtn');
+        const mapModal = document.getElementById('mapModal');
+        const mapCloseBtn = mapModal.querySelector('.close-btn');
+        let mapInstance = null;
+        let mapMarkers = [];
+        showMapBtn.onclick = async () => {
+            mapModal.classList.add('active');
+            setTimeout(async () => {
+                if (!mapInstance) {
+                    mapInstance = L.map('map').setView([20.5937, 78.9629], 3);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(mapInstance);
+                }
+                // Remove old markers
+                mapMarkers.forEach(m => mapInstance.removeLayer(m));
+                mapMarkers = [];
+                // Extract GPS from EXIF
+                const gpsData = await extractAllImageGPS(sourceImages);
+                for (const [filename, coords] of Object.entries(gpsData)) {
+                    const marker = L.marker(coords).addTo(mapInstance).bindPopup(filename);
+                    mapMarkers.push(marker);
+                }
+                mapInstance.invalidateSize();
+            }, 200);
+        };
+        mapCloseBtn.onclick = () => mapModal.classList.remove('active');
+        // --- Audio Moodtracks Feature REMOVED ---
+        // --- Mobile Controls ---
+        function scrollToTop() { window.scrollTo({top:0,behavior:'smooth'}); }
+        document.getElementById('mobileTheme').onclick = () => themeToggle.click();
+        document.getElementById('mobileStory').onclick = () => storyBtn.click();
+        document.getElementById('mobileAnalytics').onclick = () => analyticsBtn.click();
+        document.getElementById('mobileTop').onclick = scrollToTop;
+    </script>
+    <div class="mobile-bar">
+        <button onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Top">⬆️</button>
+    </div>
+</body>
+</html>
